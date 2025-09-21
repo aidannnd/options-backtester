@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,8 +87,10 @@ public class BuyAndHoldStrategy implements OptionsStrategy {
         BigDecimal profitLoss = marketData.getPrice().subtract(entryPrice)
                                          .multiply(BigDecimal.valueOf(shareQuantity));
 
-        logger.info("Sold {} shares of {} at ${}, P&L: ${}",
-                   shareQuantity, underlyingSymbol, marketData.getPrice(), profitLoss);
+        long holdingDays = ChronoUnit.DAYS.between(entryDate, marketData.getTimestamp().toLocalDate());
+
+        logger.info("Sold {} shares of {} at ${}, P&L: ${}, held for {} days",
+                   shareQuantity, underlyingSymbol, marketData.getPrice(), profitLoss, holdingDays);
 
         hasPosition = false;
 
