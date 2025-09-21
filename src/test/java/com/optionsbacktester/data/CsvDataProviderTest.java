@@ -1,0 +1,80 @@
+package com.optionsbacktester.data;
+
+import com.optionsbacktester.model.MarketData;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+class CsvDataProviderTest {
+
+    private CsvDataProvider dataProvider;
+
+    @BeforeEach
+    void setUp() {
+        dataProvider = new CsvDataProvider();
+    }
+
+    @Test
+    void shouldLoadDataFromCsvFile() {
+        LocalDate startDate = LocalDate.of(2024, 1, 2);
+        LocalDate endDate = LocalDate.of(2024, 1, 5);
+
+        List<MarketData> data = dataProvider.getMarketData("SPY", startDate, endDate);
+
+        assertThat(data).hasSize(4);
+        assertThat(data.get(0).getSymbol()).isEqualTo("SPY");
+        assertThat(data.get(0).getPrice()).isEqualTo(new BigDecimal("476.28"));
+        assertThat(data.get(0).getTimestamp().toLocalDate()).isEqualTo(LocalDate.of(2024, 1, 2));
+    }
+
+    @Test
+    void shouldCalculateBidAskFromPrice() {
+        LocalDate startDate = LocalDate.of(2024, 1, 2);
+        LocalDate endDate = LocalDate.of(2024, 1, 2);
+
+        List<MarketData> data = dataProvider.getMarketData("SPY", startDate, endDate);
+
+        MarketData marketData = data.get(0);
+        BigDecimal price = marketData.getPrice();
+        BigDecimal bid = marketData.getBid();
+        BigDecimal ask = marketData.getAsk();
+
+        // Bid should be slightly less than price, ask should be slightly more
+        assertThat(bid).isLessThan(price);
+        assertThat(ask).isGreaterThan(price);
+        assertThat(marketData.getSpread()).isPositive();
+    }
+
+    @Test
+    void shouldThrowExceptionForMissingSymbol() {
+        LocalDate startDate = LocalDate.of(2024, 1, 2);
+        LocalDate endDate = LocalDate.of(2024, 1, 5);
+
+        assertThatThrownBy(() -> dataProvider.getMarketData("NONEXISTENT", startDate, endDate))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("CSV file not found in resources");
+    }
+
+    @Test
+    void shouldThrowExceptionForMissingDates() {
+        LocalDate startDate = LocalDate.of(2024, 1, 2);
+        LocalDate endDate = LocalDate.of(2024, 1, 15); // Jan 15 is MLK Day (market holiday)
+
+        // This should throw an exception because Jan 15 is a weekday but missing from CSV
+        assertThatThrownBy(() -> dataProvider.getMarketData("SPY", startDate, endDate))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Missing data for dates: [2024-01-15]");
+    }
+
+    @Test
+    void shouldCheckIfSymbolDataExists() {
+        assertThat(dataProvider.hasDataForSymbol("SPY")).isTrue();
+        assertThat(dataProvider.hasDataForSymbol("NONEXISTENT")).isFalse();
+    }
+}
