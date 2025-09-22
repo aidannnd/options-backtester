@@ -62,14 +62,33 @@ class CsvDataProviderTest {
     }
 
     @Test
-    void shouldThrowExceptionForMissingDates() {
+    void shouldHandleMarketHolidays() {
         LocalDate startDate = LocalDate.of(2024, 1, 2);
-        LocalDate endDate = LocalDate.of(2024, 1, 15); // Jan 15 is MLK Day (market holiday)
+        LocalDate endDate = LocalDate.of(2024, 1, 16); // Includes MLK Day (Jan 15)
 
-        // This should throw an exception because Jan 15 is a weekday but missing from CSV
+        // This should NOT throw an exception because Jan 15 is MLK Day (market holiday)
+        // The holiday calendar should recognize it as a non-trading day
+        List<MarketData> data = dataProvider.getMarketData("SPY", startDate, endDate);
+
+        // Should get data for trading days only, excluding MLK Day
+        assertThat(data).isNotEmpty();
+
+        // Verify no data for MLK Day (Jan 15)
+        boolean hasDataForMLKDay = data.stream()
+            .anyMatch(md -> md.getTimestamp().toLocalDate().equals(LocalDate.of(2024, 1, 15)));
+        assertThat(hasDataForMLKDay).isFalse();
+    }
+
+    @Test
+    void shouldThrowExceptionForMissingTradingDays() {
+        // Create a date range that includes a real trading day not in our CSV
+        LocalDate startDate = LocalDate.of(2024, 2, 1); // February 1st - should be a trading day
+        LocalDate endDate = LocalDate.of(2024, 2, 1);
+
+        // This should throw an exception because Feb 1 is a real trading day missing from our CSV
         assertThatThrownBy(() -> dataProvider.getMarketData("SPY", startDate, endDate))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Missing data for dates: [2024-01-15]");
+                .hasMessageContaining("Missing data for dates");
     }
 
     @Test

@@ -136,8 +136,8 @@ public class CsvDataProvider implements DataProvider {
         LocalDate current = startDate;
 
         while (!current.isAfter(endDate)) {
-            // Only check for weekdays (markets are closed on weekends)
-            if (current.getDayOfWeek().getValue() <= 5 && !dataMap.containsKey(current)) {
+            // Only check for trading days (exclude weekends and holidays)
+            if (MarketHolidayCalendar.isTradingDay(current) && !dataMap.containsKey(current)) {
                 missingDates.add(current);
             }
             current = current.plusDays(1);
