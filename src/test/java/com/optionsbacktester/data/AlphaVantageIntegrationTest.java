@@ -2,6 +2,7 @@ package com.optionsbacktester.data;
 
 import com.optionsbacktester.model.MarketData;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -15,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AlphaVantageIntegrationTest {
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "ALPHA_VANTAGE_API_KEY", matches = ".+")
     void testRealApiCall() {
         AlphaVantageDataProvider provider = new AlphaVantageDataProvider();
 

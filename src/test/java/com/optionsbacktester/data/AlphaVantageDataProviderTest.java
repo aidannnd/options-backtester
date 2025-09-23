@@ -33,7 +33,7 @@ class AlphaVantageDataProviderTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        dataProvider = new AlphaVantageDataProvider(mockHttpClient, new BigDecimal("0.001"));
+        dataProvider = new AlphaVantageDataProvider(mockHttpClient, new BigDecimal("0.001"), "test-api-key");
     }
 
     @Test

@@ -24,13 +24,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class AlphaVantageDataProvider implements DataProvider {
     private static final Logger logger = LoggerFactory.getLogger(AlphaVantageDataProvider.class);
-    private static final String API_KEY = "BB9R14RXMMVNO9JF";
     private static final String BASE_URL = "https://www.alphavantage.co/query";
     private static final BigDecimal DEFAULT_SPREAD_PERCENTAGE = new BigDecimal("0.0005"); // 0.05%
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final BigDecimal spreadPercentage;
+    private final String apiKey;
 
     public AlphaVantageDataProvider() {
         this(HttpClient.newHttpClient(), DEFAULT_SPREAD_PERCENTAGE);
@@ -41,9 +41,20 @@ public class AlphaVantageDataProvider implements DataProvider {
     }
 
     public AlphaVantageDataProvider(HttpClient httpClient, BigDecimal spreadPercentage) {
+        this(httpClient, spreadPercentage, getApiKeyFromEnvironment());
+    }
+
+    public AlphaVantageDataProvider(HttpClient httpClient, BigDecimal spreadPercentage, String apiKey) {
         this.httpClient = httpClient;
         this.objectMapper = new ObjectMapper();
         this.spreadPercentage = spreadPercentage;
+        this.apiKey = apiKey;
+
+        if (this.apiKey == null || this.apiKey.trim().isEmpty()) {
+            throw new IllegalArgumentException("Alpha Vantage API key is required. " +
+                "Set the ALPHA_VANTAGE_API_KEY environment variable or " +
+                "alpha.vantage.api.key system property, or provide it directly.");
+        }
     }
 
     @Override
@@ -78,7 +89,15 @@ public class AlphaVantageDataProvider implements DataProvider {
 
     private String buildApiUrl(String symbol) {
         return String.format("%s?function=TIME_SERIES_DAILY&symbol=%s&apikey=%s&outputsize=full",
-                BASE_URL, symbol, API_KEY);
+                BASE_URL, symbol, apiKey);
+    }
+
+    private static String getApiKeyFromEnvironment() {
+        String apiKey = System.getenv("ALPHA_VANTAGE_API_KEY");
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            apiKey = System.getProperty("alpha.vantage.api.key");
+        }
+        return apiKey;
     }
 
     private List<MarketData> parseApiResponse(String responseBody, String symbol,
