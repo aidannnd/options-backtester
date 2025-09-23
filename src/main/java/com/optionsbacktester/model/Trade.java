@@ -45,7 +45,7 @@ public class Trade {
 
     @Override
     public String toString() {
-        return String.format("%s %s %d %s @ $%.2f on %s",
-            action, quantity, symbol, symbol, price, timestamp);
+        return String.format("%s %d %s @ $%.2f on %s",
+            action, quantity, symbol, price, timestamp);
     }
 }
