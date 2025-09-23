@@ -21,9 +21,9 @@ class ProtectivePutStrategyTest {
         marketData = new MarketData(
             "AAPL",
             LocalDateTime.now(),
-            new BigDecimal("150.00"),
-            new BigDecimal("149.50"),
-            new BigDecimal("150.50"),
+            new BigDecimal("90.00"), // Lower price so we can afford 100+ shares ($9500 / $90 = 105 shares)
+            new BigDecimal("89.50"),
+            new BigDecimal("90.50"),
             1000L
         );
     }
@@ -43,7 +43,7 @@ class ProtectivePutStrategyTest {
         assertEquals("AAPL", stockTrade.getSymbol());
         assertEquals(TradeAction.BUY, stockTrade.getAction());
         assertEquals(100, stockTrade.getQuantity());
-        assertEquals(new BigDecimal("150.00"), stockTrade.getPrice());
+        assertEquals(new BigDecimal("90.00"), stockTrade.getPrice());
 
         Trade putTrade = trades.get(1);
         assertEquals(TradeAction.BUY, putTrade.getAction());
@@ -57,8 +57,8 @@ class ProtectivePutStrategyTest {
         List<Trade> trades = strategy.generateTrades(marketData);
 
         Trade putTrade = trades.get(1);
-        // Strike should be current price - offset (150 - 5 = 145)
-        assertTrue(putTrade.getSymbol().contains("145"));
+        // Strike should be current price - offset (90 - 5 = 85)
+        assertTrue(putTrade.getSymbol().contains("85"));
     }
 
     @Test
@@ -86,9 +86,9 @@ class ProtectivePutStrategyTest {
         MarketData midTermData = new MarketData(
             "AAPL",
             LocalDateTime.now().plusDays(15),
-            new BigDecimal("160.00"),
-            new BigDecimal("159.50"),
-            new BigDecimal("160.50"),
+            new BigDecimal("95.00"),
+            new BigDecimal("94.50"),
+            new BigDecimal("95.50"),
             1000L
         );
 
@@ -105,9 +105,9 @@ class ProtectivePutStrategyTest {
         MarketData expirationData = new MarketData(
             "AAPL",
             LocalDateTime.now().plusDays(31),
-            new BigDecimal("155.00"),
-            new BigDecimal("154.50"),
-            new BigDecimal("155.50"),
+            new BigDecimal("92.00"),
+            new BigDecimal("91.50"),
+            new BigDecimal("92.50"),
             1000L
         );
 
@@ -126,36 +126,36 @@ class ProtectivePutStrategyTest {
 
     @Test
     void testPutIntrinsicValueWhenInTheMoney() {
-        // Enter position at 150 (put strike at 145)
+        // Enter position at 90 (put strike at 85)
         strategy.generateTrades(marketData);
 
         // Price drops below put strike
         MarketData lowPriceData = new MarketData(
             "AAPL",
             LocalDateTime.now().plusDays(31),
-            new BigDecimal("140.00"), // Below 145 strike
-            new BigDecimal("139.50"),
-            new BigDecimal("140.50"),
+            new BigDecimal("80.00"), // Below 85 strike
+            new BigDecimal("79.50"),
+            new BigDecimal("80.50"),
             1000L
         );
 
         List<Trade> trades = strategy.generateTrades(lowPriceData);
         Trade putTrade = trades.get(1);
-        assertEquals(new BigDecimal("5.00"), putTrade.getPrice()); // 145 - 140 = 5
+        assertEquals(new BigDecimal("5.00"), putTrade.getPrice()); // 85 - 80 = 5
     }
 
     @Test
     void testPutWorthlessWhenOutOfTheMoney() {
-        // Enter position at 150 (put strike at 145)
+        // Enter position at 90 (put strike at 85)
         strategy.generateTrades(marketData);
 
         // Price stays above put strike
         MarketData highPriceData = new MarketData(
             "AAPL",
             LocalDateTime.now().plusDays(31),
-            new BigDecimal("160.00"), // Above 145 strike
-            new BigDecimal("159.50"),
-            new BigDecimal("160.50"),
+            new BigDecimal("95.00"), // Above 85 strike
+            new BigDecimal("94.50"),
+            new BigDecimal("95.50"),
             1000L
         );
 
@@ -186,7 +186,7 @@ class ProtectivePutStrategyTest {
         List<Trade> trades = strategy200.generateTrades(marketData);
 
         assertEquals(2, trades.size());
-        assertEquals(200, trades.get(0).getQuantity()); // Stock
+        assertEquals(200, trades.get(0).getQuantity()); // Stock (can afford 211 shares with $19000, rounded down to 200)
         assertEquals(2, trades.get(1).getQuantity()); // Options (200/100 = 2 contracts)
     }
 
@@ -198,8 +198,8 @@ class ProtectivePutStrategyTest {
         List<Trade> trades = strategy10Offset.generateTrades(marketData);
         Trade putTrade = trades.get(1);
 
-        // Strike should be 150 - 10 = 140
-        assertTrue(putTrade.getSymbol().contains("140"));
+        // Strike should be 90 - 10 = 80
+        assertTrue(putTrade.getSymbol().contains("80"));
     }
 
     @Test
@@ -210,8 +210,8 @@ class ProtectivePutStrategyTest {
 
         List<Trade> trades = strategy50.generateTrades(marketData);
 
-        assertEquals(2, trades.size());
-        assertEquals(50, trades.get(0).getQuantity()); // Stock
-        assertEquals(0, trades.get(1).getQuantity()); // Options (50/100 = 0 contracts)
+        // With capital-based sizing, we can't afford protective puts with only 50 max shares
+        // ($4750 / $90 = 52 shares, but need 100+ for protective puts)
+        assertEquals(0, trades.size()); // No trades since can't afford 100+ shares
     }
 }

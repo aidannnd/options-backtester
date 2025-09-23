@@ -21,9 +21,9 @@ class CoveredCallStrategyTest {
         marketData = new MarketData(
             "AAPL",
             LocalDateTime.now(),
-            new BigDecimal("150.00"),
-            new BigDecimal("149.50"),
-            new BigDecimal("150.50"),
+            new BigDecimal("90.00"), // Lower price so we can afford 100+ shares ($9500 / $90 = 105 shares)
+            new BigDecimal("89.50"),
+            new BigDecimal("90.50"),
             1000L
         );
     }
@@ -42,8 +42,8 @@ class CoveredCallStrategyTest {
         Trade stockTrade = trades.get(0);
         assertEquals("AAPL", stockTrade.getSymbol());
         assertEquals(TradeAction.BUY, stockTrade.getAction());
-        assertEquals(100, stockTrade.getQuantity());
-        assertEquals(new BigDecimal("150.00"), stockTrade.getPrice());
+        assertEquals(100, stockTrade.getQuantity()); // With $9500 and $90/share, we get 105 shares, rounded down to 100
+        assertEquals(new BigDecimal("90.00"), stockTrade.getPrice());
 
         Trade optionTrade = trades.get(1);
         assertEquals(TradeAction.SELL, optionTrade.getAction());

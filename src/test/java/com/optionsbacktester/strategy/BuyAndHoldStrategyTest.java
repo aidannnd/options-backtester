@@ -44,7 +44,8 @@ class BuyAndHoldStrategyTest {
         Trade trade = trades.get(0);
         assertEquals("AAPL", trade.getSymbol());
         assertEquals(TradeAction.BUY, trade.getAction());
-        assertEquals(100, trade.getQuantity());
+        // With new capital-based sizing: $9,500 max investment / $150 per share = 63 shares
+        assertEquals(63, trade.getQuantity());
         assertEquals(new BigDecimal("150.00"), trade.getPrice());
     }
 
@@ -62,6 +63,7 @@ class BuyAndHoldStrategyTest {
         BuyAndHoldStrategy strategyWithPastSellDate =
             new BuyAndHoldStrategy("AAPL", 100, sellDate);
 
+        // First generate the buy trade to establish position
         strategyWithPastSellDate.generateTrades(marketData);
 
         MarketData futureMarketData = new MarketData(
@@ -78,6 +80,7 @@ class BuyAndHoldStrategyTest {
         assertEquals(1, trades.size());
         Trade trade = trades.get(0);
         assertEquals(TradeAction.SELL, trade.getAction());
+        assertEquals(63, trade.getQuantity()); // Sells the same quantity that was bought
         assertEquals(new BigDecimal("160.00"), trade.getPrice());
     }
 
