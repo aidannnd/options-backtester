@@ -24,7 +24,7 @@ public class BuyAndHoldStrategy implements OptionsStrategy {
 
     public BuyAndHoldStrategy(String underlyingSymbol, int maxShares, LocalDate sellDate) {
         this.underlyingSymbol = underlyingSymbol;
-        // Use 95% of max investment to leave some buffer for fees/spread
+        // use 95% of max investment to leave some buffer for fees/spread
         this.maxInvestment = BigDecimal.valueOf(maxShares * 100).multiply(new BigDecimal("0.95"));
         this.sellDate = sellDate;
     }
@@ -56,11 +56,11 @@ public class BuyAndHoldStrategy implements OptionsStrategy {
     private List<Trade> enterPosition(MarketData marketData) {
         List<Trade> trades = new ArrayList<>();
 
-        // Calculate how many shares we can afford
+        // calculate how many shares we can afford
         BigDecimal sharePrice = marketData.getPrice();
         shareQuantity = maxInvestment.divide(sharePrice, 0, BigDecimal.ROUND_DOWN).intValue();
 
-        // Only trade if we can afford at least 1 share
+        // only trade if we can afford at least 1 share
         if (shareQuantity > 0) {
             Trade stockTrade = new Trade(
                 underlyingSymbol,
@@ -123,13 +123,13 @@ public class BuyAndHoldStrategy implements OptionsStrategy {
 
     @Override
     public BigDecimal getMinimumCapitalRequired(MarketData marketData) {
-        // Buy and Hold can work with any amount - just need to afford 1 share
+        // buy and hold can work with any amount - just need to afford 1 share
         return marketData.getPrice();
     }
 
     @Override
     public void setAvailableCapital(BigDecimal availableCapital) {
-        // Use 95% of available capital to leave some buffer for fees/spread
+        // use 95% of available capital to leave some buffer for fees/spread
         this.maxInvestment = availableCapital.multiply(new BigDecimal("0.95"));
     }
 }

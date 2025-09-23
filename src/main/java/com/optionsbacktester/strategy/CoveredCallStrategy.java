@@ -27,7 +27,7 @@ public class CoveredCallStrategy implements OptionsStrategy {
         this.underlyingSymbol = underlyingSymbol;
         this.daysToExpiration = daysToExpiration;
         this.strikeOffset = strikeOffset;
-        // Use 95% of max investment to leave some buffer for fees/spread
+        // use 95% of max investment to leave some buffer for fees/spread
         this.maxInvestment = BigDecimal.valueOf(maxShares * 100).multiply(new BigDecimal("0.95"));
     }
 
@@ -58,13 +58,13 @@ public class CoveredCallStrategy implements OptionsStrategy {
     private List<Trade> enterCoveredCallPosition(MarketData marketData) {
         List<Trade> trades = new ArrayList<>();
 
-        // Calculate how many shares we can afford
+        // calculate how many shares we can afford
         BigDecimal sharePrice = marketData.getPrice();
         shareQuantity = maxInvestment.divide(sharePrice, 0, BigDecimal.ROUND_DOWN).intValue();
 
-        // Only trade if we can afford at least 100 shares (1 option contract)
+        // only trade if we can afford at least 100 shares (1 option contract)
         if (shareQuantity >= 100) {
-            // Round down to nearest 100 for covered calls (option contracts are 100 shares each)
+            // round down to nearest 100 for covered calls (option contracts are 100 shares each)
             shareQuantity = (shareQuantity / 100) * 100;
 
             Trade stockTrade = new Trade(
@@ -190,15 +190,15 @@ public class CoveredCallStrategy implements OptionsStrategy {
 
     @Override
     public BigDecimal getMinimumCapitalRequired(MarketData marketData) {
-        // Covered Call requires 100 shares minimum (for 1 option contract)
-        // Add buffer for the 95% max investment limit: need 100 / 0.95 = 105.26 shares worth
+        // covered call requires 100 shares minimum (for 1 option contract)
+        // add buffer for the 95% max investment limit: need 100 / 0.95 = 105.26 shares worth
         BigDecimal baseRequirement = marketData.getPrice().multiply(BigDecimal.valueOf(100));
         return baseRequirement.divide(new BigDecimal("0.95"), 2, BigDecimal.ROUND_UP);
     }
 
     @Override
     public void setAvailableCapital(BigDecimal availableCapital) {
-        // Use 95% of available capital to leave some buffer for fees/spread
+        // use 95% of available capital to leave some buffer for fees/spread
         this.maxInvestment = availableCapital.multiply(new BigDecimal("0.95"));
     }
 }

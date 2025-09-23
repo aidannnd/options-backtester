@@ -29,7 +29,7 @@ public class LongStraddleStrategy implements OptionsStrategy {
         this.underlyingSymbol = underlyingSymbol;
         this.daysToExpiration = daysToExpiration;
         this.maxContracts = maxContracts;
-        // Initialize with a default value - will be set by setAvailableCapital()
+        // initialize with a default value - will be set by setAvailableCapital()
         this.maxInvestment = BigDecimal.valueOf(10000).multiply(new BigDecimal("0.95"));
         this.minimumProfitThreshold = minimumProfitThreshold;
     }
@@ -69,19 +69,19 @@ public class LongStraddleStrategy implements OptionsStrategy {
         BigDecimal putPrice = estimateOptionPrice(marketData.getPrice(), strikePrice,
                                                 daysToExpiration, OptionType.PUT);
 
-        // Calculate how many contracts we can afford
+        // calculate how many contracts we can afford
         BigDecimal straddleCost = callPrice.add(putPrice);
         int affordableContracts = maxInvestment.divide(straddleCost, 0, BigDecimal.ROUND_DOWN).intValue();
 
-        // Limit to maxContracts to prevent over-leveraging
+        // limit to maxContracts to prevent over-leveraging
         contractQuantity = Math.min(affordableContracts, maxContracts);
 
-        // Additional safety check - ensure we don't exceed 10% of available capital per contract
+        // additional safety check - ensure we don't exceed 10% of available capital per contract
         BigDecimal capitalPerContract = maxInvestment.divide(new BigDecimal("10"), 2, BigDecimal.ROUND_DOWN);
         int safeMaxContracts = capitalPerContract.divide(straddleCost, 0, BigDecimal.ROUND_DOWN).intValue();
         contractQuantity = Math.min(contractQuantity, Math.max(1, safeMaxContracts));
 
-        // Only trade if we can afford at least 1 contract
+        // only trade if we can afford at least 1 contract
         if (contractQuantity > 0) {
             String callSymbol = generateOptionSymbol(underlyingSymbol, OptionType.CALL,
                                                    strikePrice, expirationDate);
@@ -217,7 +217,7 @@ public class LongStraddleStrategy implements OptionsStrategy {
             intrinsicValue = strikePrice.subtract(stockPrice);
         }
 
-        // Base time value on volatility and time decay
+        // base time value on volatility and time decay
         double impliedVol = 0.25; // 25% implied volatility assumption
         double timeValueFactor = Math.sqrt(daysToExp / 365.0) * impliedVol * stockPrice.doubleValue() * 0.4;
         BigDecimal timeValue = BigDecimal.valueOf(Math.max(0.10, timeValueFactor));
@@ -245,7 +245,7 @@ public class LongStraddleStrategy implements OptionsStrategy {
 
     @Override
     public BigDecimal getMinimumCapitalRequired(MarketData marketData) {
-        // Long Straddle requires at least 1 call + 1 put contract
+        // long straddle requires at least 1 call + 1 put contract
         BigDecimal callPrice = estimateOptionPrice(marketData.getPrice(), marketData.getPrice(),
                                                  daysToExpiration, OptionType.CALL);
         BigDecimal putPrice = estimateOptionPrice(marketData.getPrice(), marketData.getPrice(),
@@ -255,8 +255,8 @@ public class LongStraddleStrategy implements OptionsStrategy {
 
     @Override
     public void setAvailableCapital(BigDecimal availableCapital) {
-        // Use only 50% of available capital for options strategies to manage risk
-        // Options are high-risk and can lose 100% of premium
+        // use only 50% of available capital for options strategies to manage risk
+        // options are high-risk and can lose 100% of premium
         this.maxInvestment = availableCapital.multiply(new BigDecimal("0.50"));
     }
 }

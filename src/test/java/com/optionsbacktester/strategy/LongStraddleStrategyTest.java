@@ -42,7 +42,7 @@ class LongStraddleStrategyTest {
 
         Trade callTrade = trades.get(0);
         assertEquals(TradeAction.BUY, callTrade.getAction());
-        // With safety limits and 50% capital allocation, expect reasonable quantities
+        // with safety limits and 50% capital allocation, expect reasonable quantities
         assertTrue(callTrade.getQuantity() >= 1 && callTrade.getQuantity() <= 10); // Reasonable contract quantity
         assertTrue(callTrade.getSymbol().contains("AAPL"));
         assertTrue(callTrade.getSymbol().contains("C")); // Call option
@@ -71,11 +71,11 @@ class LongStraddleStrategyTest {
 
     @Test
     void testPositionManagementAfterEntry() {
-        // Enter position
+        // enter position
         List<Trade> entryTrades = strategy.generateTrades(marketData);
         assertEquals(2, entryTrades.size());
 
-        // Test management with profitable move (large price change)
+        // test management with profitable move (large price change)
         MarketData profitableData = new MarketData(
             "AAPL",
             LocalDateTime.now().plusDays(15),
@@ -97,10 +97,10 @@ class LongStraddleStrategyTest {
 
     @Test
     void testExpirationClose() {
-        // Enter position
+        // enter position
         strategy.generateTrades(marketData);
 
-        // Test at expiration (31+ days later)
+        // test at expiration (31+ days later)
         MarketData expirationData = new MarketData(
             "AAPL",
             LocalDateTime.now().plusDays(31),
@@ -113,16 +113,16 @@ class LongStraddleStrategyTest {
         List<Trade> expirationTrades = strategy.generateTrades(expirationData);
         assertEquals(2, expirationTrades.size()); // Should close at expiration
 
-        // Verify both are sell trades
+        // verify both are sell trades
         assertTrue(expirationTrades.stream().allMatch(t -> t.getAction() == TradeAction.SELL));
     }
 
     @Test
     void testIntrinsicValueCalculation() {
-        // Enter position at 150
+        // enter position at 150
         strategy.generateTrades(marketData);
 
-        // Price moves significantly up
+        // price moves significantly up
         MarketData upMoveData = new MarketData(
             "AAPL",
             LocalDateTime.now().plusDays(31),
@@ -142,10 +142,10 @@ class LongStraddleStrategyTest {
 
     @Test
     void testPutIntrinsicValue() {
-        // Enter position at 150
+        // enter position at 150
         strategy.generateTrades(marketData);
 
-        // Price moves significantly down
+        // price moves significantly down
         MarketData downMoveData = new MarketData(
             "AAPL",
             LocalDateTime.now().plusDays(31),
@@ -165,13 +165,13 @@ class LongStraddleStrategyTest {
 
     @Test
     void testReset() {
-        // Enter position
+        // enter position
         strategy.generateTrades(marketData);
 
-        // Reset strategy
+        // reset strategy
         strategy.reset();
 
-        // Should be able to enter new position
+        // should be able to enter new position
         List<Trade> newTrades = strategy.generateTrades(marketData);
         assertEquals(2, newTrades.size());
         assertTrue(newTrades.stream().allMatch(t -> t.getAction() == TradeAction.BUY));
@@ -186,7 +186,7 @@ class LongStraddleStrategyTest {
         List<Trade> trades = multiContractStrategy.generateTrades(marketData);
 
         assertEquals(2, trades.size());
-        // With safety limits and 50% capital allocation, expect up to 5 contracts max
+        // with safety limits and 50% capital allocation, expect up to 5 contracts max
         assertTrue(trades.get(0).getQuantity() >= 1 && trades.get(0).getQuantity() <= 5); // Call
         assertTrue(trades.get(1).getQuantity() >= 1 && trades.get(1).getQuantity() <= 5); // Put
         assertEquals(trades.get(0).getQuantity(), trades.get(1).getQuantity()); // Same quantity for both

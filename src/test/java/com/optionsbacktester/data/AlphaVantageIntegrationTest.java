@@ -20,7 +20,7 @@ class AlphaVantageIntegrationTest {
     void testRealApiCall() {
         AlphaVantageDataProvider provider = new AlphaVantageDataProvider();
 
-        // Get recent data (last few days)
+        // get recent data (last few days)
         LocalDate endDate = LocalDate.now().minusDays(1); // Yesterday
         LocalDate startDate = endDate.minusDays(2); // 3 days of data
 

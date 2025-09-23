@@ -25,11 +25,11 @@ public class Portfolio {
         if (trade.getAction() == TradeAction.BUY) {
             return cash.compareTo(trade.getTotalValue()) >= 0;
         } else {
-            // For SELL trades, check if we have the position
+            // for SELL trades, check if we have the position
             if (isOptionSymbol(trade.getSymbol())) {
                 return canSellOption(trade);
             } else {
-                // Regular stock position
+                // regular stock position
                 int currentPosition = positions.getOrDefault(trade.getSymbol(), 0);
                 return currentPosition >= trade.getQuantity();
             }
@@ -37,7 +37,7 @@ public class Portfolio {
     }
 
     private boolean isOptionSymbol(String symbol) {
-        // Option symbols contain underscores and option type indicators (C for Call, P for Put)
+        // option symbols contain underscores and option type indicators (C for Call, P for Put)
         return symbol.contains("_") && (symbol.contains("_C_") || symbol.contains("_P_"));
     }
 
@@ -45,21 +45,21 @@ public class Portfolio {
         String symbol = trade.getSymbol();
         int currentOptionPosition = positions.getOrDefault(symbol, 0);
 
-        // Check if we're closing a long position (selling options we own)
+        // check if we're closing a long position (selling options we own)
         if (currentOptionPosition >= trade.getQuantity()) {
             return true; // We own enough options to sell
         }
 
-        // Otherwise, check if we can write new options (covered calls or naked puts)
+        // otherwise, check if we can write new options (covered calls or naked puts)
         if (symbol.contains("_C_")) {
-            // Writing a call option - check if we have enough underlying shares for covered call
+            // writing a call option - check if we have enough underlying shares for covered call
             String underlyingSymbol = extractUnderlyingSymbol(symbol);
             int underlyingShares = positions.getOrDefault(underlyingSymbol, 0);
             int sharesNeeded = trade.getQuantity() * 100; // Each option contract = 100 shares
             return underlyingShares >= sharesNeeded;
         } else if (symbol.contains("_P_")) {
-            // Writing a put option - for now, assume we have enough cash/margin (naked put)
-            // In a real system, this would check margin requirements
+            // writing a put option - for now, assume we have enough cash/margin (naked put)
+            // in a real system, this would check margin requirements
             return true;
         }
 
@@ -67,7 +67,7 @@ public class Portfolio {
     }
 
     private String extractUnderlyingSymbol(String optionSymbol) {
-        // Extract underlying symbol from option symbol like "AAPL_20240201_C_2106400"
+        // extract underlying symbol from option symbol like "AAPL_20240201_C_2106400"
         return optionSymbol.split("_")[0];
     }
 
@@ -84,7 +84,7 @@ public class Portfolio {
             cash = cash.add(trade.getTotalValue());
 
             if (isOptionSymbol(trade.getSymbol())) {
-                // For option sales, reduce the option position
+                // for option sales, reduce the option position
                 int currentOptionPosition = positions.getOrDefault(trade.getSymbol(), 0);
                 int newPosition = currentOptionPosition - trade.getQuantity();
                 if (newPosition == 0) {
@@ -93,7 +93,7 @@ public class Portfolio {
                     positions.put(trade.getSymbol(), newPosition);
                 }
             } else {
-                // Regular stock sale
+                // regular stock sale
                 int currentPosition = positions.getOrDefault(trade.getSymbol(), 0);
                 int newPosition = currentPosition - trade.getQuantity();
                 if (newPosition == 0) {
@@ -106,9 +106,9 @@ public class Portfolio {
     }
 
     public void updateValue(MarketData marketData) {
-        // This method updates value for the given symbol, but we need to track
+        // this method updates value for the given symbol, but we need to track
         // market prices for all symbols to calculate total portfolio value properly
-        // For now, this is a simplified version that works for single-symbol backtests
+        // for now, this is a simplified version that works for single-symbol backtests
         BigDecimal positionValue = BigDecimal.ZERO;
         Integer position = positions.get(marketData.getSymbol());
         if (position != null) {

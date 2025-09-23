@@ -57,7 +57,7 @@ class ProtectivePutStrategyTest {
         List<Trade> trades = strategy.generateTrades(marketData);
 
         Trade putTrade = trades.get(1);
-        // Strike should be current price - offset (90 - 5 = 85)
+        // strike should be current price - offset (90 - 5 = 85)
         assertTrue(putTrade.getSymbol().contains("85"));
     }
 
@@ -78,11 +78,11 @@ class ProtectivePutStrategyTest {
 
     @Test
     void testPositionManagementBeforeExpiration() {
-        // Enter position
+        // enter position
         List<Trade> entryTrades = strategy.generateTrades(marketData);
         assertEquals(2, entryTrades.size());
 
-        // Test management before expiration (15 days later)
+        // test management before expiration (15 days later)
         MarketData midTermData = new MarketData(
             "AAPL",
             LocalDateTime.now().plusDays(15),
@@ -98,10 +98,10 @@ class ProtectivePutStrategyTest {
 
     @Test
     void testExpirationClose() {
-        // Enter position
+        // enter position
         strategy.generateTrades(marketData);
 
-        // Test at expiration (31+ days later)
+        // test at expiration (31+ days later)
         MarketData expirationData = new MarketData(
             "AAPL",
             LocalDateTime.now().plusDays(31),
@@ -126,10 +126,10 @@ class ProtectivePutStrategyTest {
 
     @Test
     void testPutIntrinsicValueWhenInTheMoney() {
-        // Enter position at 90 (put strike at 85)
+        // enter position at 90 (put strike at 85)
         strategy.generateTrades(marketData);
 
-        // Price drops below put strike
+        // price drops below put strike
         MarketData lowPriceData = new MarketData(
             "AAPL",
             LocalDateTime.now().plusDays(31),
@@ -146,10 +146,10 @@ class ProtectivePutStrategyTest {
 
     @Test
     void testPutWorthlessWhenOutOfTheMoney() {
-        // Enter position at 90 (put strike at 85)
+        // enter position at 90 (put strike at 85)
         strategy.generateTrades(marketData);
 
-        // Price stays above put strike
+        // price stays above put strike
         MarketData highPriceData = new MarketData(
             "AAPL",
             LocalDateTime.now().plusDays(31),
@@ -166,13 +166,13 @@ class ProtectivePutStrategyTest {
 
     @Test
     void testReset() {
-        // Enter position
+        // enter position
         strategy.generateTrades(marketData);
 
-        // Reset strategy
+        // reset strategy
         strategy.reset();
 
-        // Should be able to enter new position
+        // should be able to enter new position
         List<Trade> newTrades = strategy.generateTrades(marketData);
         assertEquals(2, newTrades.size());
         assertTrue(newTrades.stream().allMatch(t -> t.getAction() == TradeAction.BUY));
@@ -198,19 +198,19 @@ class ProtectivePutStrategyTest {
         List<Trade> trades = strategy10Offset.generateTrades(marketData);
         Trade putTrade = trades.get(1);
 
-        // Strike should be 90 - 10 = 80
+        // strike should be 90 - 10 = 80
         assertTrue(putTrade.getSymbol().contains("80"));
     }
 
     @Test
     void testOptionContractQuantityCalculation() {
-        // Test with share quantities that don't divide evenly by 100
+        // test with share quantities that don't divide evenly by 100
         ProtectivePutStrategy strategy50 = new ProtectivePutStrategy(
             "AAPL", 30, new BigDecimal("5.00"), 50);
 
         List<Trade> trades = strategy50.generateTrades(marketData);
 
-        // With capital-based sizing, we can't afford protective puts with only 50 max shares
+        // with capital-based sizing, we can't afford protective puts with only 50 max shares
         // ($4750 / $90 = 52 shares, but need 100+ for protective puts)
         assertEquals(0, trades.size()); // No trades since can't afford 100+ shares
     }

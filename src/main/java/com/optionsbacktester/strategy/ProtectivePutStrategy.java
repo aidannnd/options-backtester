@@ -27,7 +27,7 @@ public class ProtectivePutStrategy implements OptionsStrategy {
         this.underlyingSymbol = underlyingSymbol;
         this.daysToExpiration = daysToExpiration;
         this.strikeOffset = strikeOffset;
-        // Use 95% of max investment to leave some buffer for fees/spread
+        // use 95% of max investment to leave some buffer for fees/spread
         this.maxInvestment = BigDecimal.valueOf(maxShares * 100).multiply(new BigDecimal("0.95"));
     }
 
@@ -58,13 +58,13 @@ public class ProtectivePutStrategy implements OptionsStrategy {
     private List<Trade> enterProtectivePutPosition(MarketData marketData) {
         List<Trade> trades = new ArrayList<>();
 
-        // Calculate how many shares we can afford
+        // calculate how many shares we can afford
         BigDecimal sharePrice = marketData.getPrice();
         shareQuantity = maxInvestment.divide(sharePrice, 0, BigDecimal.ROUND_DOWN).intValue();
 
-        // Only trade if we can afford at least 100 shares (1 option contract)
+        // only trade if we can afford at least 100 shares (1 option contract)
         if (shareQuantity >= 100) {
-            // Round down to nearest 100 for protective puts (option contracts are 100 shares each)
+            // round down to nearest 100 for protective puts (option contracts are 100 shares each)
             shareQuantity = (shareQuantity / 100) * 100;
 
             Trade stockTrade = new Trade(
@@ -190,8 +190,8 @@ public class ProtectivePutStrategy implements OptionsStrategy {
 
     @Override
     public BigDecimal getMinimumCapitalRequired(MarketData marketData) {
-        // Protective Put requires 100 shares minimum + put option cost
-        // Add buffer for the 95% max investment limit
+        // protective put requires 100 shares minimum + put option cost
+        // add buffer for the 95% max investment limit
         BigDecimal stockCost = marketData.getPrice().multiply(BigDecimal.valueOf(100));
         BigDecimal putCost = estimateOptionPrice(marketData.getPrice(),
                                                marketData.getPrice().subtract(strikeOffset),
@@ -202,7 +202,7 @@ public class ProtectivePutStrategy implements OptionsStrategy {
 
     @Override
     public void setAvailableCapital(BigDecimal availableCapital) {
-        // Use 95% of available capital to leave some buffer for fees/spread
+        // use 95% of available capital to leave some buffer for fees/spread
         this.maxInvestment = availableCapital.multiply(new BigDecimal("0.95"));
     }
 }

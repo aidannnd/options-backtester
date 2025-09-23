@@ -36,7 +36,7 @@ public class BacktestEngine {
         portfolio.reset();
         executedTrades.clear();
 
-        // Inject portfolio capital into strategy
+        // inject portfolio capital into strategy
         strategy.setAvailableCapital(portfolio.getTotalValue());
 
         List<MarketData> marketDataList = dataProvider.getMarketData(symbol, startDate, endDate);

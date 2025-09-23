@@ -42,7 +42,7 @@ public class Main {
         System.out.println();
 
         try {
-            // Demo configuration - use higher capital to ensure all strategies can execute
+            // demo configuration - use higher capital to ensure all strategies can execute
             String symbol = "SPY";
             LocalDate startDate = LocalDate.of(2024, 1, 2);
             LocalDate endDate = LocalDate.of(2024, 1, 30);
@@ -54,18 +54,18 @@ public class Main {
             System.out.println("Initial Capital: $" + initialCapital);
             System.out.println();
 
-            // Use CSV data provider for demo
+            // use CSV data provider for demo
             DataProvider dataProvider = new CsvDataProvider();
 
-            // Get first market data point to determine stock price for adaptive strike offsets
+            // get first market data point to determine stock price for adaptive strike offsets
             List<MarketData> sampleData = dataProvider.getMarketData(symbol, startDate, startDate);
             BigDecimal stockPrice = sampleData.get(0).getPrice();
 
-            // Calculate strike offset as percentage of stock price (5% for reasonable OTM options)
+            // calculate strike offset as percentage of stock price (5% for reasonable OTM options)
             BigDecimal strikeOffsetPercentage = new BigDecimal("0.05"); // 5%
             BigDecimal strikeOffset = stockPrice.multiply(strikeOffsetPercentage);
 
-            // Ensure minimum $1 offset and round to reasonable increments
+            // ensure minimum $1 offset and round to reasonable increments
             strikeOffset = strikeOffset.max(new BigDecimal("1.00"));
 
             System.out.println("Stock Price: $" + stockPrice + ", Strike Offset: $" + strikeOffset);
@@ -102,14 +102,14 @@ public class Main {
         System.out.println();
 
         try {
-            // Get user inputs
+            // get user inputs
             String symbol = getSymbolInput();
             LocalDate[] dateRange = getDateRangeInput();
             BigDecimal initialCapital = getCapitalInput();
             DataProvider dataProvider = getDataProviderInput();
             OptionsStrategy strategy = getStrategyInput(symbol, dateRange[1]);
 
-            // Check capital requirements and prompt user if insufficient
+            // check capital requirements and prompt user if insufficient
             BigDecimal adjustedCapital = CapitalRequirementChecker.checkAndPromptForCapital(
                     strategy, symbol, initialCapital, dataProvider, dateRange[0], scanner);
 
@@ -128,7 +128,7 @@ public class Main {
             System.out.println();
             System.out.println("Running backtest...");
 
-            // Run the backtest with adjusted capital
+            // run the backtest with adjusted capital
             BacktestEngine engine = new BacktestEngine(dataProvider, strategy, adjustedCapital);
             BacktestResult result = engine.runBacktest(symbol, dateRange[0], dateRange[1]);
 
@@ -261,18 +261,18 @@ public class Main {
 
     private static BigDecimal calculateDynamicStrikeOffset(String symbol) {
         try {
-            // Use CSV data provider to get sample price
+            // use CSV data provider to get sample price
             DataProvider dataProvider = new CsvDataProvider();
             LocalDate sampleDate = LocalDate.of(2024, 1, 2);
             List<MarketData> sampleData = dataProvider.getMarketData(symbol, sampleDate, sampleDate);
             BigDecimal stockPrice = sampleData.get(0).getPrice();
 
-            // Calculate 5% offset with $1 minimum
+            // calculate 5% offset with $1 minimum
             BigDecimal strikeOffsetPercentage = new BigDecimal("0.05");
             BigDecimal strikeOffset = stockPrice.multiply(strikeOffsetPercentage);
             return strikeOffset.max(new BigDecimal("1.00"));
         } catch (Exception e) {
-            // Fallback to reasonable default
+            // fallback to reasonable default
             return new BigDecimal("5.00");
         }
     }

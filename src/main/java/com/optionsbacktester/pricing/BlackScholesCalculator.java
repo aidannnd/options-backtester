@@ -33,18 +33,18 @@ public class BlackScholesCalculator {
         double r = riskFreeRate;
         double sigma = volatility;
 
-        // Calculate d1 and d2
+        // calculate d1 and d2
         double d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T));
         double d2 = d1 - sigma * Math.sqrt(T);
 
         double optionPrice;
 
         if (optionType == OptionType.CALL) {
-            // Call option: C = S * N(d1) - K * e^(-r*T) * N(d2)
+            // call option: C = S * N(d1) - K * e^(-r*T) * N(d2)
             optionPrice = S * NORMAL_DISTRIBUTION.cumulativeProbability(d1)
                          - K * Math.exp(-r * T) * NORMAL_DISTRIBUTION.cumulativeProbability(d2);
         } else {
-            // Put option: P = K * e^(-r*T) * N(-d2) - S * N(-d1)
+            // put option: P = K * e^(-r*T) * N(-d2) - S * N(-d1)
             optionPrice = K * Math.exp(-r * T) * NORMAL_DISTRIBUTION.cumulativeProbability(-d2)
                          - S * NORMAL_DISTRIBUTION.cumulativeProbability(-d1);
         }
@@ -95,11 +95,11 @@ public class BlackScholesCalculator {
             OptionType optionType) {
 
         if (optionType == OptionType.CALL) {
-            // Call intrinsic value: max(S - K, 0)
+            // call intrinsic value: max(S - K, 0)
             BigDecimal intrinsic = underlyingPrice.subtract(strikePrice);
             return intrinsic.compareTo(BigDecimal.ZERO) > 0 ? intrinsic : BigDecimal.ZERO;
         } else {
-            // Put intrinsic value: max(K - S, 0)
+            // put intrinsic value: max(K - S, 0)
             BigDecimal intrinsic = strikePrice.subtract(underlyingPrice);
             return intrinsic.compareTo(BigDecimal.ZERO) > 0 ? intrinsic : BigDecimal.ZERO;
         }

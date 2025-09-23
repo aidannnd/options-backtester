@@ -81,7 +81,7 @@ public class CsvDataProvider implements DataProvider {
             }
         }
 
-        // Check for missing dates and report them
+        // check for missing dates and report them
         List<LocalDate> missingDates = findMissingDates(dataMap, startDate, endDate);
         if (!missingDates.isEmpty()) {
             throw new RuntimeException("Missing data for dates: " + missingDates);
@@ -122,7 +122,7 @@ public class CsvDataProvider implements DataProvider {
         BigDecimal close = new BigDecimal(fields[4].trim());
         long volume = Long.parseLong(fields[5].trim());
 
-        // Calculate bid/ask from close price with spread
+        // calculate bid/ask from close price with spread
         BigDecimal halfSpread = close.multiply(spreadPercentage).divide(BigDecimal.valueOf(2), 4, RoundingMode.HALF_UP);
         BigDecimal bid = close.subtract(halfSpread);
         BigDecimal ask = close.add(halfSpread);
@@ -136,7 +136,7 @@ public class CsvDataProvider implements DataProvider {
         LocalDate current = startDate;
 
         while (!current.isAfter(endDate)) {
-            // Only check for trading days (exclude weekends and holidays)
+            // only check for trading days (exclude weekends and holidays)
             if (MarketHolidayCalendar.isTradingDay(current) && !dataMap.containsKey(current)) {
                 missingDates.add(current);
             }

@@ -14,7 +14,7 @@ class BlackScholesCalculatorTest {
 
     @Test
     void shouldCalculateCallOptionPrice() {
-        // Standard Black-Scholes test case
+        // standard Black-Scholes test case
         BigDecimal underlyingPrice = new BigDecimal("100.00");
         BigDecimal strikePrice = new BigDecimal("105.00");
         double timeToExpiration = 0.25; // 3 months
@@ -25,7 +25,7 @@ class BlackScholesCalculatorTest {
             underlyingPrice, strikePrice, timeToExpiration, riskFreeRate, volatility, OptionType.CALL
         );
 
-        // Expected value is approximately $2.48 based on Black-Scholes formula
+        // expected value is approximately $2.48 based on Black-Scholes formula
         assertThat(callPrice.doubleValue()).isCloseTo(2.48, within(0.1));
         assertThat(callPrice.doubleValue()).isPositive();
     }
@@ -42,7 +42,7 @@ class BlackScholesCalculatorTest {
             underlyingPrice, strikePrice, timeToExpiration, riskFreeRate, volatility, OptionType.PUT
         );
 
-        // Expected value is approximately $6.17 based on Black-Scholes formula
+        // expected value is approximately $6.17 based on Black-Scholes formula
         assertThat(putPrice.doubleValue()).isCloseTo(6.17, within(0.1));
         assertThat(putPrice.doubleValue()).isPositive();
     }
@@ -57,7 +57,7 @@ class BlackScholesCalculatorTest {
             underlyingPrice, strikePrice, timeToExpiration, 0.05, 0.20, OptionType.CALL
         );
 
-        // Should equal intrinsic value: max(110 - 105, 0) = 5
+        // should equal intrinsic value: max(110 - 105, 0) = 5
         assertThat(callPrice).isEqualByComparingTo(new BigDecimal("5.00"));
     }
 
@@ -71,7 +71,7 @@ class BlackScholesCalculatorTest {
             underlyingPrice, strikePrice, timeToExpiration, 0.05, 0.20, OptionType.PUT
         );
 
-        // Should equal intrinsic value: max(105 - 95, 0) = 10
+        // should equal intrinsic value: max(105 - 95, 0) = 10
         assertThat(putPrice).isEqualByComparingTo(new BigDecimal("10.00"));
     }
 
@@ -80,13 +80,13 @@ class BlackScholesCalculatorTest {
         BigDecimal underlyingPrice = new BigDecimal("95.00");
         BigDecimal strikePrice = new BigDecimal("105.00");
 
-        // Out-of-money expired call
+        // out-of-money expired call
         BigDecimal expiredCallPrice = BlackScholesCalculator.calculateIntrinsicValue(
             underlyingPrice, strikePrice, OptionType.CALL
         );
         assertThat(expiredCallPrice).isEqualByComparingTo(BigDecimal.ZERO);
 
-        // Out-of-money expired put
+        // out-of-money expired put
         BigDecimal expiredPutPrice = BlackScholesCalculator.calculateIntrinsicValue(
             new BigDecimal("110.00"), strikePrice, OptionType.PUT
         );
@@ -100,7 +100,7 @@ class BlackScholesCalculatorTest {
 
         double timeToExpiration = BlackScholesCalculator.calculateTimeToExpiration(currentDate, expirationDate);
 
-        // Should be approximately 0.25 years (3 months)
+        // should be approximately 0.25 years (3 months)
         assertThat(timeToExpiration).isCloseTo(0.25, within(0.01));
     }
 
@@ -149,7 +149,7 @@ class BlackScholesCalculatorTest {
             underlyingPrice, strikePrice, timeToExpiration, riskFreeRate, volatility, OptionType.CALL
         );
 
-        // At-the-money call delta should be around 0.5-0.6
+        // at-the-money call delta should be around 0.5-0.6
         assertThat(delta).isBetween(0.4, 0.7);
     }
 
@@ -165,7 +165,7 @@ class BlackScholesCalculatorTest {
             underlyingPrice, strikePrice, timeToExpiration, riskFreeRate, volatility, OptionType.PUT
         );
 
-        // At-the-money put delta should be around -0.4 to -0.6
+        // at-the-money put delta should be around -0.4 to -0.6
         assertThat(delta).isBetween(-0.7, -0.3);
     }
 
@@ -181,7 +181,7 @@ class BlackScholesCalculatorTest {
             underlyingPrice, strikePrice, timeToExpiration, riskFreeRate, volatility, OptionType.CALL
         );
 
-        // Theta should be negative (time decay)
+        // theta should be negative (time decay)
         assertThat(theta).isNegative();
     }
 
@@ -197,7 +197,7 @@ class BlackScholesCalculatorTest {
             underlyingPrice, strikePrice, timeToExpiration, riskFreeRate, volatility, OptionType.CALL
         );
 
-        // Higher volatility should result in higher option prices
+        // higher volatility should result in higher option prices
         assertThat(callPrice.doubleValue()).isGreaterThan(5.0);
     }
 }

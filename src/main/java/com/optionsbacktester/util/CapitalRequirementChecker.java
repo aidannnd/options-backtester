@@ -37,7 +37,7 @@ public class CapitalRequirementChecker {
                                                     BigDecimal currentCapital, DataProvider dataProvider,
                                                     LocalDate startDate, Scanner scanner) {
         try {
-            // Get initial market data to calculate minimum capital
+            // get initial market data to calculate minimum capital
             List<MarketData> sampleData = dataProvider.getMarketData(symbol, startDate, startDate);
             if (sampleData.isEmpty()) {
                 System.out.println("Warning: No market data available for " + symbol + " on " + startDate);
@@ -51,7 +51,7 @@ public class CapitalRequirementChecker {
                 return currentCapital; // All good, proceed
             }
 
-            // Capital is insufficient, prompt user
+            // capital is insufficient, prompt user
             System.out.println();
             System.out.println("INSUFFICIENT CAPITAL WARNING");
             System.out.println("Strategy: " + strategy.getName());

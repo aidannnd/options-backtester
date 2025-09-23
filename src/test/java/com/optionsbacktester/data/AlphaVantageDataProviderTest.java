@@ -83,12 +83,12 @@ class AlphaVantageDataProviderTest {
         assertThat(firstDay.getPrice()).isEqualTo(new BigDecimal("477.89"));
         assertThat(firstDay.getTimestamp().toLocalDate()).isEqualTo(LocalDate.of(2024, 1, 4));
 
-        // Test bid/ask calculation with 0.1% spread
+        // test bid/ask calculation with 0.1% spread
         BigDecimal price = firstDay.getPrice();
         assertThat(firstDay.getBid()).isLessThan(price);
         assertThat(firstDay.getAsk()).isGreaterThan(price);
 
-        // Check that spread is approximately 0.1% of price (allowing for rounding)
+        // check that spread is approximately 0.1% of price (allowing for rounding)
         BigDecimal expectedSpread = price.multiply(new BigDecimal("0.001"));
         BigDecimal actualSpread = firstDay.getSpread();
         assertThat(actualSpread).isCloseTo(expectedSpread, org.assertj.core.data.Percentage.withPercentage(1));

@@ -20,12 +20,12 @@ public class MarketHolidayCalendar {
      * Check if a given date is a US market holiday
      */
     public static boolean isMarketHoliday(LocalDate date) {
-        // Weekend check
+        // weekend check
         if (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
             return true;
         }
 
-        // Cache holidays for the current year if needed
+        // cache holidays for the current year if needed
         int year = date.getYear();
         if (year != lastCachedYear) {
             FIXED_HOLIDAYS_CACHE.clear();
@@ -68,53 +68,53 @@ public class MarketHolidayCalendar {
     private static Set<LocalDate> calculateHolidaysForYear(int year) {
         Set<LocalDate> holidays = new HashSet<>();
 
-        // New Year's Day (observed rules apply)
+        // new Year's Day (observed rules apply)
         LocalDate newYears = LocalDate.of(year, Month.JANUARY, 1);
         holidays.add(observedHoliday(newYears));
 
-        // Martin Luther King Jr. Day (3rd Monday in January)
+        // martin Luther King Jr. Day (3rd Monday in January)
         LocalDate mlkDay = LocalDate.of(year, Month.JANUARY, 1)
                 .with(TemporalAdjusters.firstInMonth(DayOfWeek.MONDAY))
                 .plusWeeks(2);
         holidays.add(mlkDay);
 
-        // Presidents' Day (3rd Monday in February)
+        // presidents' Day (3rd Monday in February)
         LocalDate presidentsDay = LocalDate.of(year, Month.FEBRUARY, 1)
                 .with(TemporalAdjusters.firstInMonth(DayOfWeek.MONDAY))
                 .plusWeeks(2);
         holidays.add(presidentsDay);
 
-        // Good Friday (calculated from Easter)
+        // good Friday (calculated from Easter)
         LocalDate goodFriday = calculateGoodFriday(year);
         holidays.add(goodFriday);
 
-        // Memorial Day (last Monday in May)
+        // memorial Day (last Monday in May)
         LocalDate memorialDay = LocalDate.of(year, Month.MAY, 31)
                 .with(TemporalAdjusters.lastInMonth(DayOfWeek.MONDAY));
         holidays.add(memorialDay);
 
-        // Juneteenth (June 19th, observed since 2021)
+        // juneteenth (June 19th, observed since 2021)
         if (year >= 2021) {
             LocalDate juneteenth = LocalDate.of(year, Month.JUNE, 19);
             holidays.add(observedHoliday(juneteenth));
         }
 
-        // Independence Day (July 4th)
+        // independence Day (July 4th)
         LocalDate independenceDay = LocalDate.of(year, Month.JULY, 4);
         holidays.add(observedHoliday(independenceDay));
 
-        // Labor Day (1st Monday in September)
+        // labor Day (1st Monday in September)
         LocalDate laborDay = LocalDate.of(year, Month.SEPTEMBER, 1)
                 .with(TemporalAdjusters.firstInMonth(DayOfWeek.MONDAY));
         holidays.add(laborDay);
 
-        // Thanksgiving (4th Thursday in November)
+        // thanksgiving (4th Thursday in November)
         LocalDate thanksgiving = LocalDate.of(year, Month.NOVEMBER, 1)
                 .with(TemporalAdjusters.firstInMonth(DayOfWeek.THURSDAY))
                 .plusWeeks(3);
         holidays.add(thanksgiving);
 
-        // Christmas Day (December 25th)
+        // christmas Day (December 25th)
         LocalDate christmas = LocalDate.of(year, Month.DECEMBER, 25);
         holidays.add(observedHoliday(christmas));
 
