@@ -28,15 +28,18 @@ public class BacktestEngine {
         this.executedTrades = new ArrayList<>();
     }
 
-    public BacktestResult runBacktest(LocalDate startDate, LocalDate endDate) {
-        logger.info("Starting backtest from {} to {} using strategy: {}",
-            startDate, endDate, strategy.getName());
+    public BacktestResult runBacktest(String symbol, LocalDate startDate, LocalDate endDate) {
+        logger.info("Starting backtest from {} to {} using strategy: {} for symbol: {}",
+            startDate, endDate, strategy.getName(), symbol);
 
         strategy.reset();
         portfolio.reset();
         executedTrades.clear();
 
-        List<MarketData> marketDataList = dataProvider.getMarketData(startDate, endDate);
+        // Inject portfolio capital into strategy
+        strategy.setAvailableCapital(portfolio.getTotalValue());
+
+        List<MarketData> marketDataList = dataProvider.getMarketData(symbol, startDate, endDate);
 
         for (MarketData marketData : marketDataList) {
             List<Trade> trades = strategy.generateTrades(marketData);
@@ -46,6 +49,8 @@ public class BacktestEngine {
                     portfolio.executeTrade(trade);
                     executedTrades.add(trade);
                     logger.debug("Executed trade: {}", trade);
+                } else {
+                    logger.warn("Cannot execute trade (insufficient funds/position): {}", trade);
                 }
             }
 
