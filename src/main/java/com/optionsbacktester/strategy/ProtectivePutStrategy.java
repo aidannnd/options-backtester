@@ -15,18 +15,20 @@ public class ProtectivePutStrategy implements OptionsStrategy {
     private final String underlyingSymbol;
     private final int daysToExpiration;
     private final BigDecimal strikeOffset;
-    private final int shareQuantity;
+    private BigDecimal maxInvestment;
 
     private boolean hasPosition = false;
     private LocalDate positionEntryDate;
     private BigDecimal putStrike;
+    private int shareQuantity;
 
     public ProtectivePutStrategy(String underlyingSymbol, int daysToExpiration,
-                                BigDecimal strikeOffset, int shareQuantity) {
+                                BigDecimal strikeOffset, int maxShares) {
         this.underlyingSymbol = underlyingSymbol;
         this.daysToExpiration = daysToExpiration;
         this.strikeOffset = strikeOffset;
-        this.shareQuantity = shareQuantity;
+        // Use 95% of max investment to leave some buffer for fees/spread
+        this.maxInvestment = BigDecimal.valueOf(maxShares * 100).multiply(new BigDecimal("0.95"));
     }
 
     @Override
@@ -56,38 +58,51 @@ public class ProtectivePutStrategy implements OptionsStrategy {
     private List<Trade> enterProtectivePutPosition(MarketData marketData) {
         List<Trade> trades = new ArrayList<>();
 
-        Trade stockTrade = new Trade(
-            underlyingSymbol,
-            TradeAction.BUY,
-            shareQuantity,
-            marketData.getPrice(),
-            marketData.getTimestamp()
-        );
-        trades.add(stockTrade);
+        // Calculate how many shares we can afford
+        BigDecimal sharePrice = marketData.getPrice();
+        shareQuantity = maxInvestment.divide(sharePrice, 0, BigDecimal.ROUND_DOWN).intValue();
 
-        putStrike = marketData.getPrice().subtract(strikeOffset);
-        LocalDate expirationDate = marketData.getTimestamp().toLocalDate().plusDays(daysToExpiration);
+        // Only trade if we can afford at least 100 shares (1 option contract)
+        if (shareQuantity >= 100) {
+            // Round down to nearest 100 for protective puts (option contracts are 100 shares each)
+            shareQuantity = (shareQuantity / 100) * 100;
 
-        String optionSymbol = generateOptionSymbol(underlyingSymbol, OptionType.PUT,
-                                                 putStrike, expirationDate);
+            Trade stockTrade = new Trade(
+                underlyingSymbol,
+                TradeAction.BUY,
+                shareQuantity,
+                sharePrice,
+                marketData.getTimestamp()
+            );
+            trades.add(stockTrade);
 
-        BigDecimal optionPrice = estimateOptionPrice(marketData.getPrice(), putStrike,
-                                                   daysToExpiration, OptionType.PUT);
+            putStrike = marketData.getPrice().subtract(strikeOffset);
+            LocalDate expirationDate = marketData.getTimestamp().toLocalDate().plusDays(daysToExpiration);
 
-        Trade optionTrade = new Trade(
-            optionSymbol,
-            TradeAction.BUY,
-            shareQuantity / 100,
-            optionPrice,
-            marketData.getTimestamp()
-        );
-        trades.add(optionTrade);
+            String optionSymbol = generateOptionSymbol(underlyingSymbol, OptionType.PUT,
+                                                     putStrike, expirationDate);
 
-        hasPosition = true;
-        positionEntryDate = marketData.getTimestamp().toLocalDate();
+            BigDecimal optionPrice = estimateOptionPrice(marketData.getPrice(), putStrike,
+                                                       daysToExpiration, OptionType.PUT);
 
-        logger.info("Entered protective put position: bought {} shares at ${}, bought put at strike ${}",
-                   shareQuantity, marketData.getPrice(), putStrike);
+            Trade optionTrade = new Trade(
+                optionSymbol,
+                TradeAction.BUY,
+                shareQuantity / 100,
+                optionPrice,
+                marketData.getTimestamp()
+            );
+            trades.add(optionTrade);
+
+            hasPosition = true;
+            positionEntryDate = marketData.getTimestamp().toLocalDate();
+
+            logger.info("Entered protective put position: bought {} shares at ${}, bought put at strike ${}",
+                       shareQuantity, sharePrice, putStrike);
+        } else {
+            logger.warn("Cannot afford enough shares for protective put (need 100+): can only afford {} shares of {} at ${} with max investment ${}",
+                       shareQuantity, underlyingSymbol, sharePrice, maxInvestment);
+        }
 
         return trades;
     }
@@ -170,5 +185,24 @@ public class ProtectivePutStrategy implements OptionsStrategy {
         hasPosition = false;
         positionEntryDate = null;
         putStrike = null;
+        shareQuantity = 0;
+    }
+
+    @Override
+    public BigDecimal getMinimumCapitalRequired(MarketData marketData) {
+        // Protective Put requires 100 shares minimum + put option cost
+        // Add buffer for the 95% max investment limit
+        BigDecimal stockCost = marketData.getPrice().multiply(BigDecimal.valueOf(100));
+        BigDecimal putCost = estimateOptionPrice(marketData.getPrice(),
+                                               marketData.getPrice().subtract(strikeOffset),
+                                               daysToExpiration, OptionType.PUT);
+        BigDecimal baseRequirement = stockCost.add(putCost);
+        return baseRequirement.divide(new BigDecimal("0.95"), 2, BigDecimal.ROUND_UP);
+    }
+
+    @Override
+    public void setAvailableCapital(BigDecimal availableCapital) {
+        // Use 95% of available capital to leave some buffer for fees/spread
+        this.maxInvestment = availableCapital.multiply(new BigDecimal("0.95"));
     }
 }

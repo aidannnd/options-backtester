@@ -14,16 +14,18 @@ public class BuyAndHoldStrategy implements OptionsStrategy {
     private static final Logger logger = LoggerFactory.getLogger(BuyAndHoldStrategy.class);
 
     private final String underlyingSymbol;
-    private final int shareQuantity;
+    private BigDecimal maxInvestment;
     private final LocalDate sellDate;
 
     private boolean hasPosition = false;
     private LocalDate entryDate;
     private BigDecimal entryPrice;
+    private int shareQuantity;
 
-    public BuyAndHoldStrategy(String underlyingSymbol, int shareQuantity, LocalDate sellDate) {
+    public BuyAndHoldStrategy(String underlyingSymbol, int maxShares, LocalDate sellDate) {
         this.underlyingSymbol = underlyingSymbol;
-        this.shareQuantity = shareQuantity;
+        // Use 95% of max investment to leave some buffer for fees/spread
+        this.maxInvestment = BigDecimal.valueOf(maxShares * 100).multiply(new BigDecimal("0.95"));
         this.sellDate = sellDate;
     }
 
@@ -54,20 +56,32 @@ public class BuyAndHoldStrategy implements OptionsStrategy {
     private List<Trade> enterPosition(MarketData marketData) {
         List<Trade> trades = new ArrayList<>();
 
-        Trade stockTrade = new Trade(
-            underlyingSymbol,
-            TradeAction.BUY,
-            shareQuantity,
-            marketData.getPrice(),
-            marketData.getTimestamp()
-        );
-        trades.add(stockTrade);
+        // Calculate how many shares we can afford
+        BigDecimal sharePrice = marketData.getPrice();
+        shareQuantity = maxInvestment.divide(sharePrice, 0, BigDecimal.ROUND_DOWN).intValue();
 
-        hasPosition = true;
-        entryDate = marketData.getTimestamp().toLocalDate();
-        entryPrice = marketData.getPrice();
+        // Only trade if we can afford at least 1 share
+        if (shareQuantity > 0) {
+            Trade stockTrade = new Trade(
+                underlyingSymbol,
+                TradeAction.BUY,
+                    shareQuantity,
+                sharePrice,
+                marketData.getTimestamp()
+            );
+            trades.add(stockTrade);
 
-        logger.info("Bought {} shares of {} at ${}", shareQuantity, underlyingSymbol, entryPrice);
+            hasPosition = true;
+            entryDate = marketData.getTimestamp().toLocalDate();
+            entryPrice = sharePrice;
+
+            logger.info("Bought {} shares of {} at ${} (${} invested)",
+                    shareQuantity, underlyingSymbol, entryPrice,
+                       sharePrice.multiply(BigDecimal.valueOf(shareQuantity)));
+        } else {
+            logger.warn("Cannot afford any shares of {} at ${} with max investment ${}",
+                       underlyingSymbol, sharePrice, maxInvestment);
+        }
 
         return trades;
     }
@@ -75,22 +89,24 @@ public class BuyAndHoldStrategy implements OptionsStrategy {
     private List<Trade> exitPosition(MarketData marketData) {
         List<Trade> trades = new ArrayList<>();
 
-        Trade stockTrade = new Trade(
-            underlyingSymbol,
-            TradeAction.SELL,
-            shareQuantity,
-            marketData.getPrice(),
-            marketData.getTimestamp()
-        );
-        trades.add(stockTrade);
+        if (shareQuantity > 0) {
+            Trade stockTrade = new Trade(
+                underlyingSymbol,
+                TradeAction.SELL,
+                    shareQuantity,
+                marketData.getPrice(),
+                marketData.getTimestamp()
+            );
+            trades.add(stockTrade);
 
-        BigDecimal profitLoss = marketData.getPrice().subtract(entryPrice)
-                                         .multiply(BigDecimal.valueOf(shareQuantity));
+            BigDecimal profitLoss = marketData.getPrice().subtract(entryPrice)
+                                             .multiply(BigDecimal.valueOf(shareQuantity));
 
-        long holdingDays = ChronoUnit.DAYS.between(entryDate, marketData.getTimestamp().toLocalDate());
+            long holdingDays = ChronoUnit.DAYS.between(entryDate, marketData.getTimestamp().toLocalDate());
 
-        logger.info("Sold {} shares of {} at ${}, P&L: ${}, held for {} days",
-                   shareQuantity, underlyingSymbol, marketData.getPrice(), profitLoss, holdingDays);
+            logger.info("Sold {} shares of {} at ${}, P&L: ${}, held for {} days",
+                    shareQuantity, underlyingSymbol, marketData.getPrice(), profitLoss, holdingDays);
+        }
 
         hasPosition = false;
 
@@ -102,5 +118,18 @@ public class BuyAndHoldStrategy implements OptionsStrategy {
         hasPosition = false;
         entryDate = null;
         entryPrice = null;
+        shareQuantity = 0;
+    }
+
+    @Override
+    public BigDecimal getMinimumCapitalRequired(MarketData marketData) {
+        // Buy and Hold can work with any amount - just need to afford 1 share
+        return marketData.getPrice();
+    }
+
+    @Override
+    public void setAvailableCapital(BigDecimal availableCapital) {
+        // Use 95% of available capital to leave some buffer for fees/spread
+        this.maxInvestment = availableCapital.multiply(new BigDecimal("0.95"));
     }
 }

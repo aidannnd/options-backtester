@@ -15,18 +15,20 @@ public class CoveredCallStrategy implements OptionsStrategy {
     private final String underlyingSymbol;
     private final int daysToExpiration;
     private final BigDecimal strikeOffset;
-    private final int shareQuantity;
+    private BigDecimal maxInvestment;
 
     private boolean hasPosition = false;
     private LocalDate positionEntryDate;
     private BigDecimal callStrike;
+    private int shareQuantity;
 
     public CoveredCallStrategy(String underlyingSymbol, int daysToExpiration,
-                              BigDecimal strikeOffset, int shareQuantity) {
+                              BigDecimal strikeOffset, int maxShares) {
         this.underlyingSymbol = underlyingSymbol;
         this.daysToExpiration = daysToExpiration;
         this.strikeOffset = strikeOffset;
-        this.shareQuantity = shareQuantity;
+        // Use 95% of max investment to leave some buffer for fees/spread
+        this.maxInvestment = BigDecimal.valueOf(maxShares * 100).multiply(new BigDecimal("0.95"));
     }
 
     @Override
@@ -56,38 +58,51 @@ public class CoveredCallStrategy implements OptionsStrategy {
     private List<Trade> enterCoveredCallPosition(MarketData marketData) {
         List<Trade> trades = new ArrayList<>();
 
-        Trade stockTrade = new Trade(
-            underlyingSymbol,
-            TradeAction.BUY,
-            shareQuantity,
-            marketData.getPrice(),
-            marketData.getTimestamp()
-        );
-        trades.add(stockTrade);
+        // Calculate how many shares we can afford
+        BigDecimal sharePrice = marketData.getPrice();
+        shareQuantity = maxInvestment.divide(sharePrice, 0, BigDecimal.ROUND_DOWN).intValue();
 
-        callStrike = marketData.getPrice().add(strikeOffset);
-        LocalDate expirationDate = marketData.getTimestamp().toLocalDate().plusDays(daysToExpiration);
+        // Only trade if we can afford at least 100 shares (1 option contract)
+        if (shareQuantity >= 100) {
+            // Round down to nearest 100 for covered calls (option contracts are 100 shares each)
+            shareQuantity = (shareQuantity / 100) * 100;
 
-        String optionSymbol = generateOptionSymbol(underlyingSymbol, OptionType.CALL,
-                                                 callStrike, expirationDate);
+            Trade stockTrade = new Trade(
+                underlyingSymbol,
+                TradeAction.BUY,
+                shareQuantity,
+                sharePrice,
+                marketData.getTimestamp()
+            );
+            trades.add(stockTrade);
 
-        BigDecimal optionPrice = estimateOptionPrice(marketData.getPrice(), callStrike,
-                                                   daysToExpiration, OptionType.CALL);
+            callStrike = marketData.getPrice().add(strikeOffset);
+            LocalDate expirationDate = marketData.getTimestamp().toLocalDate().plusDays(daysToExpiration);
 
-        Trade optionTrade = new Trade(
-            optionSymbol,
-            TradeAction.SELL,
-            shareQuantity / 100, // 1 option contract = 100 shares
-            optionPrice,
-            marketData.getTimestamp()
-        );
-        trades.add(optionTrade);
+            String optionSymbol = generateOptionSymbol(underlyingSymbol, OptionType.CALL,
+                                                     callStrike, expirationDate);
 
-        hasPosition = true;
-        positionEntryDate = marketData.getTimestamp().toLocalDate();
+            BigDecimal optionPrice = estimateOptionPrice(marketData.getPrice(), callStrike,
+                                                       daysToExpiration, OptionType.CALL);
 
-        logger.info("Entered covered call position: bought {} shares at ${}, sold call at strike ${}",
-                   shareQuantity, marketData.getPrice(), callStrike);
+            Trade optionTrade = new Trade(
+                optionSymbol,
+                TradeAction.SELL,
+                shareQuantity / 100, // 1 option contract = 100 shares
+                optionPrice,
+                marketData.getTimestamp()
+            );
+            trades.add(optionTrade);
+
+            hasPosition = true;
+            positionEntryDate = marketData.getTimestamp().toLocalDate();
+
+            logger.info("Entered covered call position: bought {} shares at ${}, sold call at strike ${}",
+                       shareQuantity, sharePrice, callStrike);
+        } else {
+            logger.warn("Cannot afford enough shares for covered call (need 100+): can only afford {} shares of {} at ${} with max investment ${}",
+                       shareQuantity, underlyingSymbol, sharePrice, maxInvestment);
+        }
 
         return trades;
     }
@@ -170,5 +185,20 @@ public class CoveredCallStrategy implements OptionsStrategy {
         hasPosition = false;
         positionEntryDate = null;
         callStrike = null;
+        shareQuantity = 0;
+    }
+
+    @Override
+    public BigDecimal getMinimumCapitalRequired(MarketData marketData) {
+        // Covered Call requires 100 shares minimum (for 1 option contract)
+        // Add buffer for the 95% max investment limit: need 100 / 0.95 = 105.26 shares worth
+        BigDecimal baseRequirement = marketData.getPrice().multiply(BigDecimal.valueOf(100));
+        return baseRequirement.divide(new BigDecimal("0.95"), 2, BigDecimal.ROUND_UP);
+    }
+
+    @Override
+    public void setAvailableCapital(BigDecimal availableCapital) {
+        // Use 95% of available capital to leave some buffer for fees/spread
+        this.maxInvestment = availableCapital.multiply(new BigDecimal("0.95"));
     }
 }
